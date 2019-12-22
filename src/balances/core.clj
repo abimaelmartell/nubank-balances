@@ -2,20 +2,25 @@
   (:gen-class)
   (:require [org.httpkit.server :as server]
             [compojure.core :refer :all]
-            [compojure.route :as route]))
-
-(defn root-handler
-  [req]
-  {:status 200
-   :headers {"Content-Type" "text/html"}
-   :body "Test"})
+            [balances.handlers :as handlers]))
 
 (defroutes app-routes
-  (GET "/" [] root-handler))
+  (context "/accounts/:account-id" [account-id]
+           (POST  "/operation"       [account-id] handlers/operation-handler)
+           (GET   "/balance"         [account-id] handlers/balance-handler)
+           (GET   "/statement"       [account-id] handlers/statement-handler)
+           (GET   "/periods-of-debt" [account-id] handlers/periods-of-debt-handler)))
+
+(defn json-middleware
+  "Set content type to JSON for all responses"
+  [handler]
+  (fn [request]
+    (let [response (handler request)]
+      (assoc-in response [:headers "Content-Type"] "application-json"))))
 
 (defn -main
-  "I don't do a whole lot ... yet."
+  "Start the web server"
   [& args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "8080"))]
-    (server/run-server #'app-routes {:port port})
+    (server/run-server (json-middleware app-routes) {:port port})
     (println (str "Running webserver at http:/127.0.0.1:" port "/"))))
