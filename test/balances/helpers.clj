@@ -7,9 +7,10 @@
   ([date amount] { :type "debit" :amount amount :date date }))
 
 (defn credit-operation-json
-  ([] (credit-operation-json "1/11/2019" 20.00))
-  ([date] (credit-operation-json date 20.00))
-  ([date amount] { :type "credit" :amount amount :date date }))
+  ([] (credit-operation-json "1/11/2019" 20.00 "McDonalds"))
+  ([date] (credit-operation-json date 20.00 "McDonalds"))
+  ([date amount] { :type "credit" :amount amount :date date, :merchant "McDonalds" })
+  ([date amount merchant] { :type "credit" :amount amount :date date, :merchant merchant }))
 
 (defn debit-operation
   [& args]

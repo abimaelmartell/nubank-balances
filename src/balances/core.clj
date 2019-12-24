@@ -18,7 +18,7 @@
   [handler]
   (fn [request]
     (let [response (handler request)]
-      (assoc-in response [:headers "Content-Type"] "application-json"))))
+      (assoc-in response [:headers "Content-Type"] "application/json"))))
 
 (defn wrap-handler
   [handler]
@@ -28,9 +28,11 @@
     (wrap-keyword-params)
     (wrap-params)))
 
+(def app (wrap-handler app-routes))
+
 (defn -main
   "Start the web server"
   [& args]
   (let [port (Integer/parseInt (or (System/getenv "PORT") "8080"))]
-    (server/run-server (wrap-handler app-routes) {:port port})
+    (server/run-server app {:port port})
     (println (str "Running webserver at http:/127.0.0.1:" port "/"))))

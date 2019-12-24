@@ -96,20 +96,21 @@
         ; current balance is negative, so end is nil
         (is (= (third-period :end) nil))))))
 
-(deftest filter-by-date-test
-  (testing "It should filter operations by dates"
+(deftest filter-statement-by-date-test
+  (testing "It should filter statement by dates"
     (let [operations [(credit-operation "01/12/2019")
                       (credit-operation "02/12/2019")
                       (credit-operation "03/12/2019")
                       (credit-operation "04/12/2019")
                       (credit-operation "05/12/2019")
                       (credit-operation "06/12/2019")]
-          filtered (logic/filter-by-date
-                     operations
+          statement (logic/operations->statement operations)
+          filtered (logic/filter-statement-by-date
+                     statement
                      (utils/parse-date "03/12/2019")
                      (utils/parse-date "05/12/2019"))]
       (is (= (count filtered) 3))
 
-      (is (= "03/12/2019" (utils/unparse-date (get (first filtered) :date))))
-      (is (= "04/12/2019" (utils/unparse-date (get (second filtered) :date))))
-      (is (= "05/12/2019" (utils/unparse-date (get (last filtered) :date)))))))
+      (is (= "03/12/2019" (first (first filtered))))
+      (is (= "04/12/2019" (first (second filtered))))
+      (is (= "05/12/2019" (first (last filtered)))))))

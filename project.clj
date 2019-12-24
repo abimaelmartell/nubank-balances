@@ -9,7 +9,8 @@
                  [org.clojure/data.json "0.2.7"]
                  [clj-time "0.15.2"]
                  [org.clojure/math.numeric-tower "0.0.4"]
-                 [ring/ring-headers "0.3.0"]]
+                 [ring/ring-headers "0.3.0"]
+                 [ring/ring-mock "0.4.0"]]
   :main ^:skip-aot balances.core
   :target-path "target/%s"
   :profiles {:uberjar {:aot :all}})

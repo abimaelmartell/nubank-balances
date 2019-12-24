@@ -60,6 +60,6 @@
               (conj { :principal (math/abs current-balance) :start (first current-group) }))
           rest)))))
 
-(defn filter-by-date
-  [operations starting ending]
-    (filter #(t/within? starting ending (% :date)) operations))
+(defn filter-statement-by-date
+  [statement starting ending]
+    (filter #(t/within? starting ending (utils/parse-date (first %))) statement))

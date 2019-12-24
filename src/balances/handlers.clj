@@ -33,16 +33,16 @@
   (let [{{ :keys [account-id starting ending] } :params } req]
     (as-> nil %
       (store/account-operations account-id)
+      (logic/operations->statement %)
       ; if params `starting` and `ending` are provided
       ; it will filter the statement to only include
       ; those dates, otherwise will include all operations
       (if (validations/are-valid-statement-dates? starting ending)
-        (logic/filter-by-date
+        (logic/filter-statement-by-date
           %
           (parse-date starting)
           (parse-date ending))
         (identity %))
-      (logic/operations->statement %)
       (data->json %))))
 
 (defn periods-of-debt-handler

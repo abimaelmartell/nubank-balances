@@ -9,3 +9,7 @@
 (defn account-operations
   [account-id]
   (get @accounts account-id))
+
+(defn reset-accounts!
+  []
+  (reset! accounts {}))
