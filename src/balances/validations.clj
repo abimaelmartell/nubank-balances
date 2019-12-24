@@ -1,5 +1,6 @@
 (ns balances.validations
-  (:require [balances.utils :as utils])
+  (:require [balances.utils :refer :all]
+            [clj-time.core :as t])
   (:use [clojure.set :only [difference]]
         [clojure.string :only (join)]))
 
@@ -27,7 +28,7 @@
 (defn is-valid-date?
   [date]
   (try
-    (utils/parse-date date) true
+    (parse-date date) true
     (catch Exception e false)))
 
 (defn validate-operation-data
@@ -53,3 +54,12 @@
       (str "Missing keys: " (join ", " (map name missing-keys)))
       (if-not (empty? invalid-data)
         (str "Invalid data on: " (join ", " invalid-data))))))
+
+(defn are-valid-statement-dates?
+  [starting ending]
+  (if (and (is-valid-date? starting)
+           (is-valid-date? ending))
+        (let [date-starting (parse-date starting)
+              date-ending (parse-date ending)]
+          (t/before? date-starting date-ending ))
+        false))

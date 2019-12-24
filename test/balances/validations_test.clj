@@ -1,6 +1,7 @@
 (ns balances.validations-test
   (:require [clojure.test :refer :all]
             [balances.validations :refer :all]
+            [balances.utils :refer :all]
             [balances.helpers :refer :all]))
 
 (deftest is-valid-date?-test
@@ -60,3 +61,22 @@
 
     (let [result (validate-operation {:type "credit"})]
       (is (= result "Missing keys: amount, date, merchant")))))
+
+(deftest are-valid-statement-dates?-test
+  (testing "It should return false when ending date is before starting date"
+    (let [starting "20/12/2019"
+          ending "02/12/2019"
+          result (are-valid-statement-dates? starting ending)]
+      (is (= result false))))
+
+  (testing "It should return true when ending date is after starting date"
+    (let [starting "02/12/2019"
+          ending "20/12/2019"
+          result (are-valid-statement-dates? starting ending)]
+      (is (= result true))))
+
+  (testing "It should return false when dates are invalid"
+    (let [starting "20122019"
+          ending "invalid"
+          result (are-valid-statement-dates? starting ending)]
+      (is (= result false)))))

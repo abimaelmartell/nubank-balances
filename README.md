@@ -65,6 +65,10 @@ For credit operation
 ### Account Statement
 #### GET /accounts/:account-id/statement
 
+Optional params `starting` and `ending` using date format `dd/mm/YYYY` can be used to filter statement.
+
+__GET /accounts/:account-id/statement?`starting`=10/12/2019&`ending`=15/12/2019__
+
 ##### Response
 
 ```

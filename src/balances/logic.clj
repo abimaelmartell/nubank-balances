@@ -1,6 +1,7 @@
 (ns balances.logic
   (:require [balances.utils :as utils]
-            [clojure.math.numeric-tower :as math]))
+            [clojure.math.numeric-tower :as math]
+            [clj-time.core :as t]))
 
 (defn calculate-balance
   [operations]
@@ -58,3 +59,7 @@
             is-principal-change
               (conj { :principal (math/abs current-balance) :start (first current-group) }))
           rest)))))
+
+(defn filter-by-date
+  [operations starting ending]
+    (filter #(t/within? starting ending (% :date)) operations))
