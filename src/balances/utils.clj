@@ -43,6 +43,12 @@
   [data]
   (json/write-str data :value-fn operation-map-writer))
 
-(defn json->data
+(defn parse-json
   [json]
-  (json/read-str json :key-fn keyword :value-fn operation-map-reader))
+  (json/read-str json :key-fn keyword))
+
+(defn map->operation
+  [json]
+  (-> json
+      (update :date parse-date)
+      (update :type keyword)))

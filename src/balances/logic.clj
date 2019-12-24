@@ -2,30 +2,15 @@
   (:require [balances.utils :as utils]
             [clojure.math.numeric-tower :as math]))
 
-(def credit-operation-keys
-  '(:type :amount :date))
-
-(def debit-operation-keys
-  '(:type :amount :date :merchant))
-
-(defn valid-keys
-  [operation expected-keys]
-  (= (keys operation) expected-keys))
-
-;(defn validate)
-
-;(defn is-valid-operation?
-;  [operation]
-;  (case (operation :type)
-;    :debit (validate-debit-operation operation)
-;    :credit (validate-credit-operation operation)))
-
 (defn calculate-balance
   [operations]
-  (reduce (fn [balance operation]
-            (case (operation :type)
-              :debit (+ balance (operation :amount))
-              :credit (- balance (operation :amount)))) 0 operations))
+  (reduce
+    (fn [balance operation]
+      (case (operation :type)
+        :debit (+ balance (operation :amount))
+        :credit (- balance (operation :amount))))
+    0
+    operations))
 
 (defn operations->groups
   [operations]

@@ -1,20 +1,23 @@
 (ns balances.handlers
   (:require [balances.store :as store]
             [balances.logic :as logic]
-            [balances.utils :as utils]))
+            [balances.utils :refer :all]
+            [balances.validations :as validations])
+  (:use [clojure.string :only (join)]))
 
 (defn operation-handler
   [req]
   (let [{ :keys [body params] } req
-        { account-id :account-id } params]
-    (store/save-operation! account-id
-                           (->
-                             (slurp body)
-                             (utils/json->data)))
-    (->>
-      (store/account-operations account-id)
-      (sort utils/sort-by-date)
-      (utils/data->json))))
+        { account-id :account-id } params
+        operation-data (parse-json (slurp body))
+        error (validations/validate-operation operation-data)]
+    (if (nil? error)
+      (do
+        (store/save-operation! account-id (map->operation operation-data))
+        (data->json {:success true }))
+      (data->json
+        {:success false
+         :error error}))))
 
 (defn balance-handler
   [req]
@@ -23,7 +26,7 @@
       (store/account-operations account-id)
       (logic/calculate-balance)
       (hash-map :balance)
-      (utils/data->json))))
+      (data->json))))
 
 (defn statement-handler
   [req]
@@ -31,7 +34,7 @@
     (->
       (store/account-operations account-id)
       (logic/operations->statement)
-      (utils/data->json))))
+      (data->json))))
 
 (defn periods-of-debt-handler
   [req]
@@ -39,4 +42,4 @@
     (->
       (store/account-operations account-id)
       (logic/operations->periods-of-debt)
-      (utils/data->json))))
+      (data->json))))
