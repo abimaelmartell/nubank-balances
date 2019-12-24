@@ -35,7 +35,7 @@
   (reduce
     (fn [errors [key value]]
       (if-not (case key
-                :amount (and (pos? value) (number? value))
+                :amount (and (number? value) (pos? value))
                 :type (contains? valid-operation-types value)
                 :date (is-valid-date? value)
                 :merchant (string? value)
