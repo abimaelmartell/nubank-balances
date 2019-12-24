@@ -15,10 +15,11 @@
 
 (defn operations->groups
   [operations]
-  (->>
-    operations
-    (sort utils/sort-by-date)
-    (utils/group-operations)))
+  (group-by #(utils/unparse-date (% :date)) operations))
+
+(defn sort-operations-by-date
+  [operations]
+  (sort utils/sort-by-date operations))
 
 (defn operations->statement
   [operations]

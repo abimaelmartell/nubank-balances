@@ -114,3 +114,17 @@
       (is (= "03/12/2019" (first (first filtered))))
       (is (= "04/12/2019" (first (second filtered))))
       (is (= "05/12/2019" (first (last filtered)))))))
+
+(deftest sort-operations-by-date-test
+  (testing "It should return list sorted"
+    (let [operations [(credit-operation "10/12/2019")
+                      (credit-operation "02/12/2019")
+                      (credit-operation "13/12/2019")
+                      (credit-operation "04/12/2019")
+                      (credit-operation "05/12/2019")
+                      (credit-operation "06/12/2019")]
+          sorted (logic/sort-operations-by-date operations)
+          dates (map #(utils/unparse-date (% :date)) sorted)]
+      (is (= (first dates) "02/12/2019"))
+
+      (is (= (last dates) "13/12/2019")))))

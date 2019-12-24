@@ -33,6 +33,7 @@
   (let [{{ :keys [account-id starting ending] } :params } req]
     (as-> nil %
       (store/account-operations account-id)
+      (logic/sort-operations-by-date %)
       (logic/operations->statement %)
       ; if params `starting` and `ending` are provided
       ; it will filter the statement to only include
@@ -50,5 +51,6 @@
   (let [{{ account-id :account-id } :params } req]
     (->
       (store/account-operations account-id)
+      (logic/sort-operations-by-date)
       (logic/operations->periods-of-debt)
       (data->json))))

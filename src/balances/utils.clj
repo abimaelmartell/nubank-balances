@@ -18,10 +18,6 @@
   [a b]
   (t/before? (a :date) (b :date)))
 
-(defn group-operations
-  [operations]
-  (group-by #(unparse-date (% :date)) operations))
-
 (defn minus-one-day
   [date]
   (unparse-date (t/minus (parse-date date) (t/days 1))))
