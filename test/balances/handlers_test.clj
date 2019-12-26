@@ -50,7 +50,6 @@
           body (parse-json (:body response :body))]
       (is (= (body :balance) -250)))))
 
-
 (deftest statement-handler-test
   (testing "It should return the statement"
     (reset-accounts!)
@@ -95,26 +94,25 @@
       (is (= (count statement) 3))
 
       ; first one should be earlier date
-      (is (= (first (first statement)) "03/12/2019"))
+      (is (= (first (first statement)) (keyword "03/12/2019")))
       ; first date contains two operations
       (is (= (count (get (second (first statement)) :operations)) 1))
       ; balance at first date is -100
       (is (= (get (second (first statement)) :balance) -150))
 
       ; second date should be latest date
-      (is (= (first (second statement)) "04/12/2019"))
+      (is (= (first (second statement)) (keyword "04/12/2019")))
       ; second date contains one operation
       (is (= (count (get (second (second statement)) :operations)) 1))
       ; second date balance is 250
       (is (= (get (second (second statement)) :balance) -200))
 
       ; second date should be latest date
-      (is (= (first (statement 2)) "05/12/2019"))
+      (is (= (first (last statement)) (keyword "05/12/2019")))
       ; second date contains one operation
-      (is (= (count (get (second (statement 2)) :operations)) 1))
+      (is (= (count (get (second (last statement)) :operations)) 1))
       ; second date balance is 250
-      (is (= (get (second (statement 2)) :balance) -250)))))
-
+      (is (= (get (second (last statement)) :balance) -250)))))
 
 (deftest periods-of-debt-handler-test
   (testing "It should return the statement"

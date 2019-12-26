@@ -63,4 +63,5 @@
 
 (defn filter-statement-by-date
   [statement starting ending]
-    (filter #(t/within? starting ending (utils/parse-date (first %))) statement))
+  (into {}
+        (filter #(t/within? starting ending (utils/parse-date (first %))) statement)))
