@@ -22,13 +22,6 @@
   [date]
   (unparse-date (t/minus (parse-date date) (t/days 1))))
 
-(defn operation-map-reader
-  [key value]
-  (case key
-    :type (keyword value)
-    :date (parse-date value)
-    value))
-
 (defn operation-map-writer
   [key value]
   (if (= (type value) org.joda.time.DateTime)
