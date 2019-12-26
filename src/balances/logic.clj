@@ -28,13 +28,11 @@
          remaining (operations->groups operations)]
     (if (empty? remaining)
       result
-      (let [[current-group & rest] remaining
-            current-balance (+ balance (calculate-balance (second current-group)))
-            current-date (first current-group)
-            current-date-operations (second current-group)]
+      (let [[[date operations] & rest] remaining
+            current-balance (+ balance (calculate-balance operations))]
         (recur
           current-balance
-          (assoc result current-date { :operations current-date-operations :balance current-balance })
+          (assoc result date { :operations operations :balance current-balance })
           rest)))))
 
 (defn operations->periods-of-debt
@@ -44,9 +42,9 @@
          remaining (operations->groups operations)]
     (if (empty? remaining)
       (reverse result)
-      (let [[current-group & rest] remaining
+      (let [[[date operations] & rest] remaining
             [last-debt & rest-debts] result
-            current-balance (+ balance (calculate-balance (second current-group)))
+            current-balance (+ balance (calculate-balance operations))
             is-debt (neg? current-balance)
             is-balance-change (not= current-balance balance)
             is-principal-change (and is-balance-change is-debt)
@@ -56,9 +54,9 @@
           current-balance
           (cond-> next-result
             is-debt-end
-              (conj (assoc last-debt :end (utils/minus-one-day (first current-group))))
+              (conj (assoc last-debt :end (utils/minus-one-day date)))
             is-principal-change
-              (conj { :principal (math/abs current-balance) :start (first current-group) }))
+              (conj { :principal (math/abs current-balance) :start date }))
           rest)))))
 
 (defn filter-statement-by-date

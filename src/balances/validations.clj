@@ -50,10 +50,12 @@
   [operation]
   (let [missing-keys (validate-missing-keys operation)
         invalid-data (validate-operation-data operation)]
-    (if-not (empty? missing-keys)
-      (str "Missing keys: " (join ", " (map name missing-keys)))
-      (if-not (empty? invalid-data)
-        (str "Invalid data on: " (join ", " invalid-data))))))
+    (cond
+      (not (empty? missing-keys))
+        (str "Missing keys: " (join ", " (map name missing-keys)))
+
+      (not (empty? invalid-data))
+        (str "Invalid data on: " (join ", " invalid-data)))))
 
 (defn are-valid-statement-dates?
   [starting ending]
