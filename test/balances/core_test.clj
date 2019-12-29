@@ -5,6 +5,6 @@
 
 (deftest app-test
   (testing "It should always respond with json"
-    (let [response (app (-> (mock/request :get "/account/1/statement")))
+    (let [response (app (-> (mock/request :get "/accounts/1/statement")))
           headers (response :headers)]
-      (is (= "application/json" (get headers "Content-Type"))))))
+      (is (= "application/json; charset=utf-8" (get headers "Content-Type"))))))

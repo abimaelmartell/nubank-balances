@@ -3,19 +3,15 @@
             [balances.logic :as logic]
             [balances.utils :refer :all]
             [balances.validations :as validations])
-  (:use [clojure.string :only (join)]))
+  (:use [ring.util.response :only [response]]))
 
 (defn operation-handler
-  [{ body :body { account-id :account-id } :params }]
-  (let [operation-data (parse-json (slurp body))
-        error (validations/validate-operation operation-data)]
-    (if (nil? error)
-      (do
-        (store/save-operation! account-id (map->operation operation-data))
-        (data->json {:success true }))
-      (data->json
-        {:success false
-         :error error}))))
+  [{ operation-data :body { account-id :account-id } :params }]
+  (if-let [error (validations/validate-operation operation-data)]
+    (response {:success false :error error})
+    (do
+      (store/save-operation! account-id (map->operation operation-data))
+      (response {:success true}))))
 
 (defn balance-handler
   [{{ account-id :account-id } :params }]
@@ -23,7 +19,7 @@
     (store/account-operations account-id)
     (logic/calculate-balance)
     (hash-map :balance)
-    (data->json)))
+    (response)))
 
 (defn- maybe-filter-by-date
   [operations starting ending]
@@ -44,7 +40,7 @@
     ; it will filter the statement to only include
     ; those dates, otherwise will include all operations
     (maybe-filter-by-date starting ending)
-    (data->json)))
+    (response)))
 
 (defn periods-of-debt-handler
   [{{ account-id :account-id } :params }]
@@ -52,4 +48,4 @@
     (store/account-operations account-id)
     (logic/sort-operations-by-date)
     (logic/operations->periods-of-debt)
-    (data->json)))
+    (response)))

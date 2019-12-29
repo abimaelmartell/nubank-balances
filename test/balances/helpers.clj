@@ -1,5 +1,6 @@
 (ns balances.helpers
-  (:require [balances.utils :refer :all]))
+  (:require [balances.utils :refer :all]
+            [clojure.data.json :as json]))
 
 (defn debit-operation-json
   ([] (debit-operation-json "1/11/2019" 100.00))
@@ -19,3 +20,17 @@
 (defn credit-operation
   [& args]
   (map->operation (apply credit-operation-json args)))
+
+(defn operation-map-writer
+  [key value]
+  (if (= (type value) org.joda.time.DateTime)
+    (unparse-date value)
+    value))
+
+(defn data->json
+  [data]
+  (json/write-str data :value-fn operation-map-writer))
+
+(defn parse-json
+  [json]
+  (json/read-str json :key-fn keyword))

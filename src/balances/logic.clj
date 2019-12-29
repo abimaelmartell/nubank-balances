@@ -23,8 +23,8 @@
 
 (defn operations->statement
   [operations]
-  (loop [balance    0
-         result     {}
+  (loop [balance 0
+         result {}
          remaining (operations->groups operations)]
     (if (empty? remaining)
       result

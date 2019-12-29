@@ -61,7 +61,7 @@
   [starting ending]
   (if (and (is-valid-date? starting)
            (is-valid-date? ending))
-        (let [date-starting (parse-date starting)
-              date-ending (parse-date ending)]
-          (t/before? date-starting date-ending ))
-        false))
+    (let [date-starting (parse-date starting)
+          date-ending (parse-date ending)]
+      (t/before? date-starting date-ending))
+    false))
