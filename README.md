@@ -5,7 +5,7 @@
 
 This is my attempt at the balances app for NuBank.
 
-I'm using `http-kit` and `compojure` for the web application and `data.json` for the json parsing. For storage i'm using an atom.
+I'm using `http-kit` and `compojure` for the web application and `ring-json` for the json parsing. For storage i'm using an atom.
 
 The entry point of the application is `core`, it starts the server and configures all the routing and some middlewares for the server.
 
@@ -73,6 +73,28 @@ For credit operation
 |`merchant`|String, required for credit operation|`"McDonalds"`|
 |`date`|String, format `dd/mm/YYYY`|`"12/12/2019"`|
 
+##### Response
+
+##### Success
+```
+{
+    "success": true
+}
+```
+
+##### Error
+```
+{
+    "success": false,
+    "error": "Missing keys: merchant"
+}
+```
+
+**Error messages**
+
+- Missing keys:
+- Invalid data on:
+
 
 ### Current Balance
 #### GET /accounts/:account-id/balance
@@ -81,7 +103,7 @@ For credit operation
 
 ```
 {
-    "balance": "20.00"
+    "balance": 20
 }
 ```
 
@@ -95,12 +117,15 @@ __GET /accounts/:account-id/statement?`starting`=10/12/2019&`ending`=15/12/2019_
 ##### Response
 
 ```
-{
-    "15/10": {
-        "operations": [],
-        "balance": "20.00"
+[
+    {
+        "date": "15/10/2019",
+        "operations": [
+            { "type": "credit", "amount": "20", "date": "15/10/2019", "merchant": "McDonalds" }
+        ],
+        "balance": "20"
     }
-}
+]
 ```
 
 ### Periods of Debt

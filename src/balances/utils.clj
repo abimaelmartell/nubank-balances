@@ -18,7 +18,7 @@
 
 (defn minus-one-day
   [date]
-  (unparse-date (t/minus (parse-date date) (t/days 1))))
+  (t/minus date (t/days 1)))
 
 (defn map->operation
   [json]

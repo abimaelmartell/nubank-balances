@@ -1,16 +1,15 @@
 (ns balances.handlers-test
   (:require [clojure.test :refer :all]
-            [balances.core :refer :all]
-            [balances.helpers :refer :all]
             [ring.mock.request :as mock]
-            [balances.utils :refer :all]
+            [balances.core :refer [app]]
+            [balances.helpers :refer :all]
             [balances.store :refer [account-operations reset-accounts!]]))
 
 (defn post-operation
   [operation-json]
   (app (-> (mock/request :post "/accounts/1/operation")
            (mock/content-type "application/json")
-           (mock/body (data->json operation-json)))))
+           (mock/body (operation->json operation-json)))))
 
 (deftest operation-handler-test
   (testing "It should run validations"
@@ -37,17 +36,22 @@
   (testing "It should return the balance"
     (reset-accounts!)
     (let [response (app (mock/request :get "/accounts/1/balance"))
-          body (parse-json (:body response :body))]
+          body (parse-json (response :body))]
+      ; initial return zero
       (is (= (body :balance) 0)))
+
     (post-operation (credit-operation-json "12/12/2019" 50))
     (post-operation (credit-operation-json "12/12/2019" 50))
     (post-operation (debit-operation-json "12/12/2019" 350))
     (let [response (app (mock/request :get "/accounts/1/balance"))
-          body (parse-json (:body response :body))]
+          body (parse-json (response :body))]
+      ; - 50 - 50 + 350 = 250
       (is (= (body :balance) 250)))
+
     (post-operation (credit-operation-json "12/12/2019" 500))
     (let [response (app (mock/request :get "/accounts/1/balance"))
-          body (parse-json (:body response :body))]
+          body (parse-json (response :body))]
+      ; 250 - 500  = -250
       (is (= (body :balance) -250)))))
 
 (deftest statement-handler-test
@@ -58,24 +62,26 @@
     (post-operation (debit-operation-json "20/12/2019" 350))
 
     (let [response (app (mock/request :get "/accounts/1/statement"))
-          statement (parse-json (:body response :body))]
-
-      ; should return two dates
-      (is (= (count statement) 2))
-
-      ; first one should be earlier date
-      (is (= (first (first statement)) (keyword "12/12/2019")))
-      ; first date contains two operations
-      (is (= (count (get (second (first statement)) :operations)) 2))
-      ; balance at first date is -100
-      (is (= (get (second (first statement)) :balance) -100))
-
-      ; second date should be latest date
-      (is (= (first (second statement)) (keyword "20/12/2019")))
-      ; second date contains one operation
-      (is (= (count (get (second (second statement)) :operations)) 1))
-      ; second date balance is 250
-      (is (= (get (second (second statement)) :balance) 250))))
+          statement (parse-json (:body response))
+          expected-statement [
+            {
+              :date "12/12/2019"
+              :operations [
+                {:type "credit", :amount 50, :date "12/12/2019", :merchant "McDonalds"}
+                {:type "credit", :amount 50, :date "12/12/2019", :merchant "McDonalds"}
+              ]
+              :balance -100
+            }
+            {
+              :date "20/12/2019"
+              :operations [
+                {:type "debit", :amount 350, :date "20/12/2019"}
+              ]
+              :balance 250
+            }
+          ]
+        ]
+      (is (= statement expected-statement))))
 
   (testing "It should be able to filter by date"
     (reset-accounts!)
@@ -87,32 +93,34 @@
     (post-operation (credit-operation-json "06/12/2019" 50))
     (post-operation (credit-operation-json "07/12/2019" 50))
 
-    (let [response (app (mock/request :get "/accounts/1/statement?starting=03/12/2019&ending=05/12/2019"))
-          statement (parse-json (:body response :body))]
-
-      ; should return two dates
-      (is (= (count statement) 3))
-
-      ; first one should be earlier date
-      (is (= (first (first statement)) (keyword "03/12/2019")))
-      ; first date contains two operations
-      (is (= (count (get (second (first statement)) :operations)) 1))
-      ; balance at first date is -100
-      (is (= (get (second (first statement)) :balance) -150))
-
-      ; second date should be latest date
-      (is (= (first (second statement)) (keyword "04/12/2019")))
-      ; second date contains one operation
-      (is (= (count (get (second (second statement)) :operations)) 1))
-      ; second date balance is 250
-      (is (= (get (second (second statement)) :balance) -200))
-
-      ; second date should be latest date
-      (is (= (first (last statement)) (keyword "05/12/2019")))
-      ; second date contains one operation
-      (is (= (count (get (second (last statement)) :operations)) 1))
-      ; second date balance is 250
-      (is (= (get (second (last statement)) :balance) -250)))))
+    (let [url "/accounts/1/statement?starting=03/12/2019&ending=05/12/2019"
+          response (app (mock/request :get url))
+          statement (parse-json (:body response :body))
+          expected-statement [
+             {
+              :date "03/12/2019"
+              :operations [
+                { :type "credit" :amount 50 :date "03/12/2019" :merchant "McDonalds" }
+              ]
+              :balance -150
+            }
+             {
+              :date "04/12/2019"
+              :operations [
+                { :type "credit" :amount 50 :date "04/12/2019" :merchant "McDonalds" }
+              ]
+              :balance -200
+            }
+             {
+              :date "05/12/2019"
+              :operations [
+                { :type "credit" :amount 50 :date "05/12/2019" :merchant "McDonalds" }
+              ]
+              :balance -250
+            }
+          ]
+        ]
+      (is (= statement expected-statement)))))
 
 (deftest periods-of-debt-handler-test
   (testing "It should return the statement"
@@ -125,16 +133,22 @@
     (post-operation (credit-operation-json "25/12/2019" 1000))
 
     (let [response (app (mock/request :get "/accounts/1/periods-of-debt"))
-          periods-of-debt (parse-json (:body response :body))]
-
-      (is (= ((periods-of-debt 0) :principal) 100))
-      (is (= ((periods-of-debt 0) :start) "10/12/2019"))
-      (is (= ((periods-of-debt 0) :end) "14/12/2019"))
-
-      (is (= ((periods-of-debt 1) :principal) 800))
-      (is (= ((periods-of-debt 1) :start) "15/12/2019"))
-      (is (= ((periods-of-debt 1) :end) "19/12/2019"))
-
-      (is (= ((periods-of-debt 2) :principal) 800))
-      (is (= ((periods-of-debt 2) :start) "25/12/2019"))
-      (is (= ((periods-of-debt 2) :end) nil)))))
+          periods-of-debt (parse-json (response :body))
+          expected-periods-of-debt [
+            {
+              :principal 100
+              :start "10/12/2019"
+              :end "14/12/2019"
+            }
+            {
+              :principal 800
+              :start "15/12/2019"
+              :end "19/12/2019"
+            }
+            {
+              :principal 800
+              :start "25/12/2019"
+            }
+          ]
+        ]
+      (is (= periods-of-debt expected-periods-of-debt)))))

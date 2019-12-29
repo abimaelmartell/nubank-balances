@@ -1,7 +1,8 @@
 (ns balances.logic-test
   (:require [clojure.test :refer :all]
             [balances.logic :as logic]
-            [balances.utils :as utils]
+            [balances.utils :refer [parse-date]
+                            :rename {parse-date d}]
             [balances.helpers :refer :all]))
 
 (deftest calculate-balance-test
@@ -21,41 +22,45 @@
     (let [operations [(credit-operation "20/12/2019")
                       (credit-operation "20/12/2019")
                       (debit-operation "21/12/2019")]
-          groups (logic/operations->groups operations)]
+          groups (logic/operations->groups operations)
+          expected-groups {
+            (d "20/12/2019") [
+              {:type :credit :amount 20 :date (d "20/12/2019") :merchant "McDonalds"}
+              {:type :credit :amount 20 :date (d "20/12/2019") :merchant "McDonalds"}
+            ]
+            (d "21/12/2019") [
+              {:type :debit :amount 100 :date (d "21/12/2019")}
+            ]
+          }
+        ]
       ; should return two groups
-      (is (= (count groups) 2))
-      ; first group key should be first date
-      (is (= (first (first groups)) "20/12/2019"))
-      ; first group operations should be two
-      (is (= (count (second (first groups))) 2))
-      ; second group key should be second date
-      (is (= (first (second groups)) "21/12/2019"))
-      ; second group operations should be one
-      (is (= (count (second (second groups))) 1)))))
+      (is (= groups expected-groups)))))
 
 (deftest operations->statement-test
   (testing "It should generate statement for operations"
     (let [operations [(credit-operation "20/12/2019" 30)
                       (credit-operation "20/12/2019" 30)
                       (debit-operation "21/12/2019" 100)]
-          statement (logic/operations->statement operations)]
-
-      ; should return two dates
-      (is (= (count statement) 2))
-
-      ; first one should be earlier date
-      (is (= (first (first statement)) "20/12/2019"))
-      ; first date contains two operations
-      (is (= (count (get (second (first statement)) :operations)) 2))
-      ; balance at first date is -60
-      (is (= (get (second (first statement)) :balance) -60))
-
-      ; second date should be latest date
-      (is (= (first (second statement)) "21/12/2019"))
-      ; second date contains one operation
-      (is (= (count (get (second (second statement)) :operations)) 1))
-      ; second date balance is 40
-      (is (= (get (second (second statement)) :balance) 40)))))
+          statement (logic/operations->statement operations)
+          expected-statement [
+            {
+              :date (d "20/12/2019")
+              :operations [
+                {:type :credit :amount 30 :date (d "20/12/2019") :merchant "McDonalds"}
+                {:type :credit :amount 30 :date (d "20/12/2019") :merchant "McDonalds"}
+              ]
+              :balance -60
+            }
+            {
+              :date (d "21/12/2019")
+              :operations [
+                {:type :debit :amount 100 :date (d "21/12/2019")}
+              ]
+              :balance 40
+            }
+          ]
+        ]
+      (is (= statement expected-statement)))))
 
 (deftest operations->periods-of-debt-test
   (testing "It should properly calculate periods of debt"
@@ -64,37 +69,25 @@
                       (debit-operation  "4/11/2019" 50)
                       (credit-operation "6/11/2019" 200)
                       (credit-operation "9/11/2019" 200)]
-          periods-of-debt (logic/operations->periods-of-debt operations)]
-
-      ; should generate three periods of debt
-      (is (= (count periods-of-debt) 3))
-
-      ; first period
-      (let [[first-period] periods-of-debt]
-        ; should start on first credit operation
-        (is (= (first-period :start) "01/11/2019"))
-        ; principal should be absolute negative balance of day
-        (is (= (first-period :principal) 20))
-        ; end day should be one day before next operation
-        (is (= (first-period :end) "03/11/2019")))
-
-      ; second period
-      (let [second-period (second periods-of-debt)]
-        ; should start on next credit operation
-        (is (= (second-period :start) "06/11/2019"))
-        ; principal should be absolute of balance at this time
-        (is (= (second-period :principal) 170))
-        ; end day should be one day before next operation
-        (is (= (second-period :end) "08/11/2019")))
-
-      ; second period
-      (let [third-period (last periods-of-debt)]
-        ; should start on next credit operation
-        (is (= (third-period :start) "09/11/2019"))
-        ; principal should be absolute of balance at this time
-        (is (= (third-period :principal) 370))
-        ; current balance is negative, so end is nil
-        (is (= (third-period :end) nil))))))
+          periods-of-debt (logic/operations->periods-of-debt operations)
+          expected-periods-of-debt [
+            {
+              :principal 20
+              :start (d "01/11/2019")
+              :end (d "03/11/2019")
+            }
+            {
+              :principal 170
+              :start (d "06/11/2019")
+              :end (d "08/11/2019")
+            }
+            {
+              :principal 370
+              :start (d "09/11/2019")
+            }
+          ]
+        ]
+      (is (= periods-of-debt expected-periods-of-debt)))))
 
 (deftest filter-statement-by-date-test
   (testing "It should filter statement by dates"
@@ -107,13 +100,33 @@
           statement (logic/operations->statement operations)
           filtered (logic/filter-statement-by-date
                      statement
-                     (utils/parse-date "03/12/2019")
-                     (utils/parse-date "05/12/2019"))]
-      (is (= (count filtered) 3))
-
-      (is (= "03/12/2019" (first (first filtered))))
-      (is (= "04/12/2019" (first (second filtered))))
-      (is (= "05/12/2019" (first (last filtered)))))))
+                     (d "03/12/2019")
+                     (d "05/12/2019"))
+          expected-statement [
+            {
+              :date (d "03/12/2019")
+              :operations [
+                {:type :credit :amount 20 :date (d "03/12/2019") :merchant "McDonalds"}
+              ]
+              :balance -60
+            }
+            {
+              :date (d "04/12/2019")
+              :operations [
+                {:type :credit :amount 20 :date (d "04/12/2019") :merchant "McDonalds"}
+              ]
+              :balance -80
+            }
+            {
+              :date (d "05/12/2019")
+              :operations [
+                {:type :credit :amount 20 :date (d "05/12/2019") :merchant "McDonalds"}
+              ]
+              :balance -100
+            }
+          ]
+        ]
+      (is (= filtered expected-statement)))))
 
 (deftest sort-operations-by-date-test
   (testing "It should return list sorted"
@@ -124,7 +137,6 @@
                       (credit-operation "05/12/2019")
                       (credit-operation "06/12/2019")]
           sorted (logic/sort-operations-by-date operations)
-          dates (map #(utils/unparse-date (% :date)) sorted)]
-      (is (= (first dates) "02/12/2019"))
-
-      (is (= (last dates) "13/12/2019")))))
+          dates (map #(% :date) sorted)]
+      (is (= (first dates) (d "02/12/2019")))
+      (is (= (last dates) (d "13/12/2019"))))))

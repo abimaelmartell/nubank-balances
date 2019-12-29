@@ -15,7 +15,7 @@
 
 (defn operations->groups
   [operations]
-  (group-by #(utils/unparse-date (% :date)) operations))
+  (group-by #(% :date) operations))
 
 (defn sort-operations-by-date
   [operations]
@@ -24,7 +24,7 @@
 (defn operations->statement
   [operations]
   (loop [balance 0
-         result {}
+         result []
          remaining (operations->groups operations)]
     (if (empty? remaining)
       result
@@ -32,7 +32,7 @@
             current-balance (+ balance (calculate-balance operations))]
         (recur
           current-balance
-          (assoc result date { :operations operations :balance current-balance })
+          (conj result { :date date :operations operations :balance current-balance })
           rest)))))
 
 (defn operations->periods-of-debt
@@ -61,5 +61,4 @@
 
 (defn filter-statement-by-date
   [statement starting ending]
-  (into {}
-        (filter #(t/within? starting ending (utils/parse-date (first %))) statement)))
+  (filter #(t/within? starting ending (% :date)) statement))
