@@ -48,15 +48,17 @@
             is-debt (neg? current-balance)
             is-balance-change (not= current-balance balance)
             is-principal-change (and is-balance-change is-debt)
-            is-debt-end (and is-balance-change (and last-debt (nil? (last-debt :end))))
-            next-result (if is-debt-end rest-debts result)]
+            last-debt-open (and last-debt (nil? (last-debt :end)))
+            is-debt-end (and is-balance-change last-debt-open)]
         (recur
           current-balance
-          (cond-> next-result
-            is-debt-end
-              (conj (assoc last-debt :end (utils/minus-one-day date)))
-            is-principal-change
-              (conj { :principal (math/abs current-balance) :start date }))
+          (as-> [] <>
+            (if is-debt-end
+              (conj rest-debts (assoc last-debt :end (utils/minus-one-day date)))
+              result)
+            (if is-principal-change
+              (conj <> { :principal (math/abs current-balance) :start date })
+              <>))
           rest)))))
 
 (defn filter-statement-by-date

@@ -1,7 +1,7 @@
 
 # balances
 
-![Clojure CI](https://github.com/abimaelmartell/nubank-balances/workflows/Clojure%20CI/badge.svg)
+[![Clojure CI](https://github.com/abimaelmartell/nubank-balances/workflows/Clojure%20CI/badge.svg)](https://github.com/abimaelmartell/nubank-balances/actions)
 
 This is my attempt at the balances app for NuBank.
 
