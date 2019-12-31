@@ -1,8 +1,8 @@
 (ns balances.validations
   (:require [balances.utils :refer :all]
-            [clj-time.core :as t])
-  (:use [clojure.set :only [difference]]
-        [clojure.string :only (join)]))
+            [clj-time.core :as t]
+            [clojure.set :refer [difference]]
+            [clojure.string :refer [join]]))
 
 (def valid-operation-types
   #{"debit" "credit"})

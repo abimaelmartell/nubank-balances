@@ -2,8 +2,8 @@
   (:require [balances.store :as store]
             [balances.logic :as logic]
             [balances.utils :refer :all]
-            [balances.validations :as validations])
-  (:use [ring.util.response :only [response]]))
+            [balances.validations :as validations]
+            [ring.util.response :refer [response]]))
 
 (defn operation-handler
   [{ operation-data :body { account-id :account-id } :params }]
